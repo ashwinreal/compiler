@@ -1,0 +1,16 @@
+%{
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include "y.tab.h"
+#define YYSTYPE char*
+%}
+
+%%
+[0-9a-zA-Z]+ {char *ptr=(char *)malloc(10);strcpy(ptr,yytext);yylval=ptr;return ALPHANUM;}
+.      {yylval=*yytext;return *yytext;}
+"\n" {yylval=*yytext;return *yytext;}
+%%
+yywrap(){
+	return 1;
+}
