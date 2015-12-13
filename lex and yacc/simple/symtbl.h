@@ -1,8 +1,9 @@
 // for symbols
 #include <stdbool.h>
 union type{
-	bool f;
-	int i;
+	bool *f;
+	int *i;
+
 	};
 typedef struct ttbl{
 	char var_name[32];

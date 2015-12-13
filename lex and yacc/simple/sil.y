@@ -45,19 +45,58 @@ pgm : pgmdecl pgmbody {printf("complete\n");exit(1);};
 pgmdecl : DECL dlist ENDDECL {};
 dlist : dstmt dlist | dstmt {};
 dstmt : BOOLEAN  ID ';' {
+						int index_id=check_exist($2);
+						if(index_id!=-1)
+							printf("error : name %s already exists\n", $2->var_name);
 					  $2->size=1;
 					  strcpy($2->data_type,"boolean");
-						$2->store.i=0;
+						$2->store.f=(bool *)malloc(sizeof(bool));
+						*($2->store.f)=false;
 						symtbl[id_count++]=$2;
 						//printf("declaration %s",yylval->data_type);
 					}
 		| INTEGER  ID ';' {
+				int index_id=check_exist($2);
+				if(index_id!=-1)
+				printf("error : name %s already exists\n", $2->var_name);
 				$2->size=1;
 				strcpy($2->data_type,"integer");
-				$2->store.i=false;
+				$2->store.i=(int *)malloc(sizeof(int));
+				*($2->store.i)=0;
 				symtbl[id_count++]=$2;
 				//	printf("declaration %s",yylval->data_type);
 		}
+		| INTEGER ID '[' expr ']' ';' {
+			printf("array of integer\n" );
+			int index_id=check_exist($2);
+			if(index_id!=-1)
+			printf("error : name %s already exists\n", $2->var_name);
+			if(strcmp($4->data_type,"boolean")==0)
+				printf("error: inside [] must be an int\n" );
+			$2->size=*($4->store.i);
+			strcpy($2->data_type,"integer");
+			$2->store.i=(int *)malloc($2->size*sizeof(int));
+			memset($2->store.i,0,$2->size);
+			symtbl[id_count++]=$2;
+
+
+		}
+		| BOOLEAN ID '[' expr ']' ';'{
+			printf("array of bool\n" );
+			int index_id=check_exist($2);
+			if(index_id!=-1)
+			printf("error : name %s already exists\n", $2->var_name);
+			if(strcmp($4->data_type,"boolean")==0)
+				printf("error: inside [] must be an int\n" );
+			$2->size=*($4->store.i);
+			strcpy($2->data_type,"boolean");
+			$2->store.f=(bool *)malloc($2->size*sizeof(bool));
+			memset($2->store.f,false,$2->size);
+			symtbl[id_count++]=$2;
+
+
+		}
+
 		;
 
 pgmbody : BEG stmtlist END {};
@@ -78,24 +117,68 @@ assign : ID  '=' expr ';'  {
 														printf("%d\n",index_id );
 														if( index_id !=-1 && check_dtype(symtbl[index_id],$3->data_type))
 															{
-																printf("expr evaluated to %d \n",$3->store.i);
+																printf("expr evaluated to %d \n",*$3->store.i);
 																if(strcmp(symtbl[index_id]->data_type,"boolean"))
 																{
-																	symtbl[index_id]->store.f=$3->store.f;
+																	*(symtbl[index_id]->store.f)=*($3->store.f);
 																}
 																else
-																	symtbl[index_id]->store.i=$3->store.i;
+																	*(symtbl[index_id]->store.i)=*($3->store.i);
 
-																$$->store.f = true;
+																$$->store.f = (bool *) malloc(sizeof(bool));
+																*($$->store.f) = true;
 
 
 															}
 														else
 															{printf("kya error  cannot evaluate!\n");
-															$$->store.f = false;
+															$$->store.f = (bool *) malloc(sizeof(bool));
+															*($$->store.f) = false;
 														}
 
-													};
+													}
+					| ID '[' expr ']' '=' expr ';' {
+
+						printf("in id = expr[]\n");
+						$$ = (tbl*)malloc(sizeof(tbl));
+						strcpy($$->var_name,"default");
+
+						if(strcmp($3->data_type,"boolean")==0)
+							printf("error: inside [] must be an int\n" );
+
+						$$->size =1;
+						strcpy($$->data_type,"boolean");
+						int index_id=check_exist($1);
+						printf("%d\n",index_id );
+					if(symtbl[index_id]->size <= *($3->store.i))
+						printf("illegal mem. ref out of index\n");
+					printf("the datatyp is %s\n", $6->data_type);
+						if( index_id !=-1 && check_dtype(symtbl[index_id],$6->data_type))
+							{
+								printf("expr evaluated to %d \n",*($6->store.i));
+								if(strcmp(symtbl[index_id]->data_type,"boolean"))
+								{
+									*(symtbl[index_id]->store.f  + *($3->store.i))=*($6->store.f );
+								}
+								else
+									*(symtbl[index_id]->store.i + *($3->store.i))=*($6->store.i);
+
+								$$->store.f = (bool *) malloc(sizeof(bool));
+								*($$->store.f) = true;
+
+
+							}
+						else
+							{printf("kya error  cannot evaluate2!\n");
+							$$->store.f = (bool *) malloc(sizeof(bool));
+							*($$->store.f) = false;
+						}
+
+
+
+					}
+
+					;
 expr : expr '+' expr {
 												if(strcmp($1->data_type,$3->data_type)==0 && check_dtype($1,"integer"))
 												{
@@ -103,7 +186,8 @@ expr : expr '+' expr {
 													strcpy($$->var_name,"default");
 													$$->size =1;
 													strcpy($$->data_type,"integer");
-													$$->store.i=$1->store.i+$3->store.i;
+													$$->store.i = (int *) malloc(sizeof(int));
+												*($$->store.i)=*($1->store.i)+*($3->store.i);
 												}else printf("error: conflicting data types or not integer data types\n");
 
 
@@ -117,7 +201,8 @@ expr : expr '+' expr {
 			strcpy($$->var_name,"default");
 			$$->size =1;
 			strcpy($$->data_type,"integer");
-			$$->store.i=$1->store.i-$3->store.i;
+			$$->store.i = (int *) malloc(sizeof(int));
+		*($$->store.i)=*($1->store.i) = *($3->store.i);
 		}else printf("error: conflicting data types or not integer data types\n");
 
 
@@ -132,7 +217,8 @@ expr : expr '+' expr {
 			strcpy($$->var_name,"default");
 			$$->size =1;
 			strcpy($$->data_type,"integer");
-			$$->store.i=$1->store.i*$3->store.i;
+			$$->store.i = (int *) malloc(sizeof(int));
+		*($$->store.i)=*($1->store.i) * *($3->store.i);
 		}else printf("error: conflicting data types or not integer data types\n");
 
 
@@ -146,7 +232,8 @@ expr : expr '+' expr {
 			strcpy($$->var_name,"default");
 			$$->size =1;
 			strcpy($$->data_type,"integer");
-			$$->store.i=$1->store.i/$3->store.i;
+			$$->store.i = (int *) malloc(sizeof(int));
+		*($$->store.i)=*($1->store.i) / *($3->store.i);
 		}else printf("error: conflicting data types or not integer data types\n");
 
 	}
@@ -158,8 +245,12 @@ expr : expr '+' expr {
 			strcpy($$->var_name,"default");
 			$$->size =1;
 			strcpy($$->data_type,"boolean");
-			$$->store.i=$1->store.i==$3->store.i;
-		}else printf("error: conflicting data types or not integer data types\n");
+			$$->store.f = (bool *) malloc(sizeof(bool));
+			if(strcmp($1->data_type,"integer")==0)
+				*($$->store.f)=*($1->store.i) == *($3->store.i);
+			else
+				*($$->store.f)=*($1->store.f) == *($3->store.f);
+		}else printf("error: conflicting data types\n");
 
 
 	}
@@ -170,13 +261,58 @@ expr : expr '+' expr {
 			strcpy($$->var_name,"default");
 			$$->size =1;
 			strcpy($$->data_type,"boolean");
-			$$->store.i=$1->store.i!=$3->store.i;
+			$$->store.f = (bool *) malloc(sizeof(bool));
+			if(strcmp($1->data_type,"integer")==0)
+				*($$->store.f)=*($1->store.i) != *($3->store.i);
+			else
+				*($$->store.f)=*($1->store.f) != *($3->store.f);
 		}else printf("error: conflicting data types or not integer data types\n");
+
+
+	}
+	| ID '[' expr ']' {
+		printf("id[]\n");
+		int index_id=check_exist($1);
+		if( index_id !=-1)
+			{
+
+
+				strcpy($1->data_type,symtbl[index_id]->data_type);
+				strcpy($1->var_name, "default_array");
+				$1->size = symtbl[index_id]->size;
+
+				if(strcmp($3->data_type,"boolean")==0)
+					printf("error: inside [] must be an int\n" );
+				if($1->size <= *($3->store.i))
+					printf("in id[expr] illegal mem. ref out of index max= %d expr=%d\n",$1->size,*($3->store.i));
+
+				if(strcmp(symtbl[index_id]->data_type,"boolean"))
+				{
+					$1->store.f = (bool *)malloc(sizeof(bool));
+					*($1->store.f) =*(symtbl[index_id]->store.f + *($3->store.i) );
+				}
+				else
+				{
+					$1->store.i = (int *)malloc(sizeof(int));
+					*($1->store.i) =*(symtbl[index_id]->store.i + *($3->store.i));
+
+				}
+					$$=$1;
+
+
+			}
+			else
+					printf("error not declared\n" );
+
+
+		printf("the datatype is %s name is %s\n",$1->data_type,$1->var_name );
+
 
 
 	}
 	| '(' expr ')' {$$=$2;}
 	| ID {
+			printf("id\n");
 			int index_id=check_exist($1);
 			if( index_id !=-1)
 				{
@@ -184,12 +320,18 @@ expr : expr '+' expr {
 
 					strcpy($1->data_type,symtbl[index_id]->data_type);
 					strcpy($1->var_name,symtbl[index_id]->var_name);
+					$1->size = symtbl[index_id]->size;
 					if(strcmp(symtbl[index_id]->data_type,"boolean"))
 					{
-						$1->store.f =symtbl[index_id]->store.f;
+						$1->store.f = (bool *)malloc(sizeof(bool));
+						*($1->store.f) =*(symtbl[index_id]->store.f);
 					}
 					else
-						$1->store.i=symtbl[index_id]->store.i;
+					{
+						$1->store.i = (int *)malloc(sizeof(int));
+						*($1->store.i) =*(symtbl[index_id]->store.i);
+
+					}
 				   	$$=$1;
 
 

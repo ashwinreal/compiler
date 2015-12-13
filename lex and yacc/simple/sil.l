@@ -8,7 +8,7 @@
 %}
 
 %%
-
+"\n" {}
 "decl" {return DECL;}
 "enddecl" {return ENDDECL;}
 "begin" {return BEG;}
@@ -31,25 +31,28 @@
 	yylval=(tbl*)malloc(sizeof(tbl));
 	strcpy(yylval->var_name,yytext);
 	strcpy(yylval->data_type,"integer");
-	yylval->store.i=atoi(yytext);
+	yylval->store.i = (int *)malloc(sizeof(int));
+	*(yylval->store.i)=atoi(yytext);
 	return NUM;}
 "true" {
 	yylval=(tbl*)malloc(sizeof(tbl));
 	strcpy(yylval->var_name,yytext);
 	strcpy(yylval->data_type,"boolean");
-	yylval->store.f=true;
+	yylval->store.f= (bool *)malloc(sizeof(bool));
+	*(yylval->store.f)=true;
 	return T;}
 "false" {
 	yylval=(tbl*)malloc(sizeof(tbl));
 	strcpy(yylval->var_name,yytext);
 	strcpy(yylval->data_type,"boolean");
-	yylval->store.f=false;
+	yylval->store.f = (bool *)malloc(sizeof(bool));
+	*(yylval->store.f)=false;
 	return F;}
 [_a-zA-Z][_0-9a-zA-Z]* {
 												yylval=(tbl*)malloc(sizeof(tbl));
 												strcpy(yylval->var_name,yytext);
 												return ID;}
-"\n" {}
+
 . {return *yytext;}
 
 
