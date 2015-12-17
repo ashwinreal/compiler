@@ -121,7 +121,10 @@ dstmt : BOOLEAN  ID ';' {
 
 		;
 
-pgmbody : BEG stmtlist END {printf("evaluating the ast\n"); ;evaluate_ast($2);};
+pgmbody : BEG stmtlist END {
+															printf("evaluating the ast\n");
+															evaluate_ast($2);
+		};
 stmtlist :  stmt stmtlist{
 													ast *temp = (ast *)malloc(sizeof(ast));
 													$$=temp;
@@ -154,8 +157,60 @@ stmt : assign {
 	|  loop {
 												$$=$1;
 	}
+	| r { $$ = $1; }
+	| w { $$= $1; }
 	;
 
+r : READ ID '[' expr ']' ';'{
+		int index_id=check_exist($2);
+		if( index_id !=-1)
+			{
+
+				$$=(ast*)malloc(sizeof(ast));
+				strcpy($$->data_type,symtbl[index_id]->data_type);
+				strcpy($2->name, "read_array");
+				$$->entry = index_id;
+				$$->node_type=READ;
+				if(strcmp($4->data_type,"boolean")==0)
+					printf("error: inside [] must be an int\n" );
+
+
+
+					$$->ptr1=$4;
+
+
+			}
+			else
+					printf("error not declared\n" );
+
+	}
+	| 	 READ ID ';'{
+			int index_id=check_exist($2);
+			if( index_id !=-1)
+				{
+
+					$$=(ast*)malloc(sizeof(ast));
+					strcpy($$->data_type,symtbl[index_id]->data_type);
+					strcpy($$->name, "read");
+					$$->entry = index_id;
+					$$->node_type=READ;
+
+					$$->ptr1=NULL;
+
+
+				}
+				else
+						printf("error not declared\n" );
+
+		}
+	;
+w : WRITE expr ';'{
+			$$=(ast*)malloc(sizeof(ast));
+			strcpy($$->data_type,$2->data_type);
+			strcpy($$->name, "write");
+			$$->node_type=WRITE;
+			$$->ptr1=$2;
+};
 assign : ID  '=' expr ';'  {
 													//	printf("in id = expr\n");
 														$$ = (ast*)malloc(sizeof(ast));
@@ -490,7 +545,7 @@ void free_ptr(ast *yylval)
 }
 yyerror()
 {
-	printf("error\n");
+	printf("yyerror\n");
 	return;
 }
 void evaluate_ast(ast *root)
@@ -593,9 +648,13 @@ void evaluate_ast(ast *root)
 		}
 		else //array
 		{
+			printf("array id_ind: %d\n",root->entry );
 			evaluate_ast(root->ptr1);
 			if(strcmp(root->data_type,"integer")==0)
-				root->int_value = *(symtbl[root->entry]->store.i + root->ptr1->int_value);
+				{
+					printf("yes int\n" );
+					root->int_value = *(symtbl[root->entry]->store.i + root->ptr1->int_value);
+				}
 			else
 				root->bool_value = *(symtbl[root->entry]->store.f + root->ptr1->int_value);
 		}
@@ -629,6 +688,27 @@ void evaluate_ast(ast *root)
 	{
 		printf("NUM/T/F %d\n",root->int_value );
 			return;
+	}
+	else if(root->node_type == READ)
+	{
+		printf("READ\n" );
+		if(symtbl[root->entry]->size==0)
+		{
+			scanf("%d\n",symtbl[root->entry]->store.i );
+		}
+		else
+		{
+			evaluate_ast(root->ptr1);
+			scanf("%d\n",symtbl[root->entry]->store.i + root->ptr1->int_value );
+		}
+		printf("read over\n" );
+	}
+	else if(root->node_type == WRITE)
+	{
+		printf("WRITE\n");
+		evaluate_ast(root->ptr1);
+		printf("writing %d %d\n",root->ptr1->int_value ,root->ptr1->entry);
+
 	}
 	else
 	{
