@@ -4,7 +4,9 @@
 #include <stdbool.h>
 #include "symtbl.h"
 #include "y.tab.h"
-
+#include "astree.h"
+#define YYSTYPE ast*
+ast *ptr;
 %}
 
 %%
@@ -28,29 +30,30 @@
 "boolean" {return BOOLEAN;}
 "integer" {return INTEGER;}
 [0-9]+ {
-	yylval=(tbl*)malloc(sizeof(tbl));
-	strcpy(yylval->var_name,yytext);
-	strcpy(yylval->data_type,"integer");
-	yylval->store.i = (int *)malloc(sizeof(int));
-	*(yylval->store.i)=atoi(yytext);
+	ptr=(ast *)malloc(sizeof(ast));
+	ptr->int_value=atoi(yytext);
+	ptr->node_type=NUM;
+	strcpy(ptr->data_type,"integer");
+	yylval=ptr;
 	return NUM;}
 "true" {
-	yylval=(tbl*)malloc(sizeof(tbl));
-	strcpy(yylval->var_name,yytext);
-	strcpy(yylval->data_type,"boolean");
-	yylval->store.f= (bool *)malloc(sizeof(bool));
-	*(yylval->store.f)=true;
+	ptr=(ast*)malloc(sizeof(ast));
+	ptr->bool_value=true;
+	ptr->node_type=T;
+	strcpy(ptr->data_type,"boolean");
+	yylval=ptr;
 	return T;}
 "false" {
-	yylval=(tbl*)malloc(sizeof(tbl));
-	strcpy(yylval->var_name,yytext);
-	strcpy(yylval->data_type,"boolean");
-	yylval->store.f = (bool *)malloc(sizeof(bool));
-	*(yylval->store.f)=false;
+	ptr=(ast*)malloc(sizeof(ast));
+	ptr->bool_value=false;
+	ptr->node_type=F;
+	strcpy(ptr->data_type,"boolean");
+	yylval=ptr;
 	return F;}
 [_a-zA-Z][_0-9a-zA-Z]* {
-												yylval=(tbl*)malloc(sizeof(tbl));
-												strcpy(yylval->var_name,yytext);
+												ptr=(ast*)malloc(sizeof(ast));
+												strcpy(ptr->name,yytext);
+												yylval=ptr;
 												return ID;}
 
 . {return *yytext;}

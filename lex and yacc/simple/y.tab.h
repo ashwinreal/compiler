@@ -66,7 +66,13 @@ extern int yydebug;
     NUM = 276,
     T = 277,
     F = 278,
-    NEQ = 279
+    PLUS = 279,
+    MINUS = 280,
+    MUL = 281,
+    DIV = 282,
+    SLIST = 283,
+    EQ = 284,
+    NEQ = 285
   };
 #endif
 /* Tokens.  */
@@ -91,7 +97,13 @@ extern int yydebug;
 #define NUM 276
 #define T 277
 #define F 278
-#define NEQ 279
+#define PLUS 279
+#define MINUS 280
+#define MUL 281
+#define DIV 282
+#define SLIST 283
+#define EQ 284
+#define NEQ 285
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED

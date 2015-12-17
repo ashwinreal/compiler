@@ -1,0 +1,32 @@
+decl
+integer a;
+integer b;
+integer c[10];
+enddecl
+begin
+a=3;
+b=2;
+if (a!=b) then
+a=5;
+b=4;
+c[2]=2;
+else
+a=10;
+b=11;
+endif
+a=c[2];
+end
+
+
+decl
+integer a;
+integer b;
+integer c[10];
+enddecl
+begin
+a=4;
+b=1;
+while (a!=b) do
+b=b+1;
+endwhile
+end

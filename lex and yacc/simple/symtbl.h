@@ -11,7 +11,8 @@ typedef struct ttbl{
 	char data_type[32];
 	union type store;
 } tbl;
-#define YYSTYPE tbl*
+
+
 /*
 decl integer a; enddecl begin if a==b then a=b; endif end
 decl integer a; enddecl begin while a==b do a=b; endwhile end*/

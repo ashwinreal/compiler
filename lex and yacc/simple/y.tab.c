@@ -69,12 +69,16 @@
 #include <string.h>
 #include <stdbool.h>
 #include "symtbl.h"
+#include "astree.h"
 #define MAX_SYMBOLS 100
 tbl *symtbl[MAX_SYMBOLS];
 int id_count=0;
 
+void free_ptr(ast *yylval);
+void evaluate_ast(ast *root);
+void print_symbols();
 
-#line 78 "y.tab.c" /* yacc.c:339  */
+#line 82 "y.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -130,7 +134,13 @@ extern int yydebug;
     NUM = 276,
     T = 277,
     F = 278,
-    NEQ = 279
+    PLUS = 279,
+    MINUS = 280,
+    MUL = 281,
+    DIV = 282,
+    SLIST = 283,
+    EQ = 284,
+    NEQ = 285
   };
 #endif
 /* Tokens.  */
@@ -155,7 +165,13 @@ extern int yydebug;
 #define NUM 276
 #define T 277
 #define F 278
-#define NEQ 279
+#define PLUS 279
+#define MINUS 280
+#define MUL 281
+#define DIV 282
+#define SLIST 283
+#define EQ 284
+#define NEQ 285
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -173,7 +189,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 177 "y.tab.c" /* yacc.c:358  */
+#line 193 "y.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -415,10 +431,10 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  8
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   146
+#define YYLAST   150
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  35
+#define YYNTOKENS  41
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  12
 /* YYNRULES -- Number of rules.  */
@@ -429,7 +445,7 @@ union yyalloc
 /* YYTRANSLATE[YYX] -- Symbol number corresponding to YYX as returned
    by yylex, with out-of-bounds checking.  */
 #define YYUNDEFTOK  2
-#define YYMAXUTOK   279
+#define YYMAXUTOK   285
 
 #define YYTRANSLATE(YYX)                                                \
   ((unsigned int) (YYX) <= YYMAXUTOK ? yytranslate[YYX] : YYUNDEFTOK)
@@ -442,12 +458,12 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-      29,    30,    27,    25,     2,    26,     2,    28,     2,     2,
-       2,     2,     2,     2,     2,     2,     2,     2,     2,    31,
-       2,    34,     2,     2,     2,     2,     2,     2,     2,     2,
+      35,    36,    33,    31,     2,    32,     2,    34,     2,     2,
+       2,     2,     2,     2,     2,     2,     2,     2,     2,    37,
+       2,    40,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       2,    32,     2,    33,     2,     2,     2,     2,     2,     2,
+       2,    38,     2,    39,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -465,17 +481,18 @@ static const yytype_uint8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20,    21,    22,    23,    24
+      15,    16,    17,    18,    19,    20,    21,    22,    23,    24,
+      25,    26,    27,    28,    29,    30
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,    44,    44,    45,    46,    46,    47,    58,    69,    84,
-     102,   103,   104,   105,   106,   107,   110,   140,   182,   197,
-     212,   227,   240,   257,   273,   313,   314,   347,   350,   351,
-     355,   356,   358
+       0,    52,    52,    53,    54,    54,    55,    69,    84,   103,
+     124,   125,   139,   146,   151,   154,   159,   211,   261,   279,
+     295,   311,   326,   343,   358,   389,   390,   415,   418,   419,
+     423,   433,   443
 };
 #endif
 
@@ -486,10 +503,11 @@ static const char *const yytname[] =
 {
   "$end", "error", "$undefined", "ID", "OPERATOR", "DECL", "ENDDECL",
   "BEG", "END", "IF", "THEN", "ELSE", "ENDIF", "WHILE", "DO", "ENDWHILE",
-  "READ", "WRITE", "EQEQ", "BOOLEAN", "INTEGER", "NUM", "T", "F", "NEQ",
-  "'+'", "'-'", "'*'", "'/'", "'('", "')'", "';'", "'['", "']'", "'='",
-  "$accept", "pgm", "pgmdecl", "dlist", "dstmt", "pgmbody", "stmtlist",
-  "stmt", "assign", "expr", "cond", "loop", YY_NULLPTR
+  "READ", "WRITE", "EQEQ", "BOOLEAN", "INTEGER", "NUM", "T", "F", "PLUS",
+  "MINUS", "MUL", "DIV", "SLIST", "EQ", "NEQ", "'+'", "'-'", "'*'", "'/'",
+  "'('", "')'", "';'", "'['", "']'", "'='", "$accept", "pgm", "pgmdecl",
+  "dlist", "dstmt", "pgmbody", "stmtlist", "stmt", "assign", "expr",
+  "cond", "loop", YY_NULLPTR
 };
 #endif
 
@@ -500,15 +518,16 @@ static const yytype_uint16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
-     275,   276,   277,   278,   279,    43,    45,    42,    47,    40,
-      41,    59,    91,    93,    61
+     275,   276,   277,   278,   279,   280,   281,   282,   283,   284,
+     285,    43,    45,    42,    47,    40,    41,    59,    91,    93,
+      61
 };
 # endif
 
-#define YYPACT_NINF -24
+#define YYPACT_NINF -29
 
 #define yypact_value_is_default(Yystate) \
-  (!!((Yystate) == (-24)))
+  (!!((Yystate) == (-29)))
 
 #define YYTABLE_NINF -1
 
@@ -519,14 +538,14 @@ static const yytype_uint16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-       1,     3,    17,    19,    21,    31,    37,     3,   -24,     5,
-     -24,     4,     8,   -24,   -24,   -19,    -2,    -2,    41,     5,
-     -24,   -24,   -24,   -24,    -2,   -24,    -2,    -2,    -2,    13,
-     -24,   -24,   -24,    -2,    28,    89,   -24,   -24,    40,    51,
-      62,    94,    -2,   116,     5,    -2,    -2,    -2,    -2,    -2,
-      -2,     5,    26,    29,    16,   -24,    73,   -24,    30,   -23,
-     -23,    20,    20,   -24,   -24,    44,   -24,   -24,    -2,   -24,
-       5,   -24,   -24,   105,    49,   -24,   -24
+      -4,    16,    14,     1,    21,    24,    39,    16,   -29,    10,
+     -29,     9,    11,   -29,   -29,   -23,    -1,    -1,    42,    10,
+     -29,   -29,   -29,   -29,    -1,   -29,    -1,    -1,    -1,    37,
+     -29,   -29,   -29,    -1,     8,    84,   -29,   -29,    25,    35,
+      52,    89,    -1,   114,    10,    -1,    -1,    -1,    -1,    -1,
+      -1,    10,    15,    17,    22,   -29,    62,   -29,    49,   -28,
+     -28,    38,    38,   -29,   -29,    58,   -29,   -29,    -1,   -29,
+      10,   -29,   -29,   106,    64,   -29,   -29
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -547,8 +566,8 @@ static const yytype_uint8 yydefact[] =
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -24,   -24,   -24,    55,   -24,   -24,    -7,   -24,   -24,   -17,
-     -24,   -24
+     -29,   -29,   -29,    70,   -29,   -29,    -7,   -29,   -29,   -17,
+     -29,   -29
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
@@ -563,63 +582,65 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-      35,    29,    47,    48,    49,    50,     1,    38,    15,    39,
-      40,    41,    37,    27,    16,    28,    43,     8,    17,    30,
-      31,    32,     4,     5,    11,    56,     9,    33,    59,    60,
-      61,    62,    63,    64,    12,    23,    24,    58,    44,    25,
-      26,    70,    71,    13,    65,    42,    45,    49,    50,    36,
-      68,    73,    46,    47,    48,    49,    50,    66,    45,    72,
-      67,    76,    14,    74,    46,    47,    48,    49,    50,    45,
-       0,     0,     0,    52,     0,    46,    47,    48,    49,    50,
-      45,     0,     0,     0,    53,     0,    46,    47,    48,    49,
-      50,    45,     0,     0,     0,    54,     0,    46,    47,    48,
-      49,    50,     0,    51,     0,     0,    69,    45,     0,     0,
-       0,     0,    45,    46,    47,    48,    49,    50,    46,    47,
-      48,    49,    50,    45,     0,    55,     0,     0,     0,    46,
-      47,    48,    49,    50,    45,     0,    75,     0,     0,     0,
-      46,    47,    48,    49,    50,     0,    57
+      35,     1,    29,    47,    48,    49,    50,    38,     9,    39,
+      40,    41,    37,    15,     8,    27,    43,    28,    44,    16,
+      30,    31,    32,    17,    11,    56,    45,    12,    59,    60,
+      61,    62,    63,    64,    33,     4,     5,    58,    46,    47,
+      48,    49,    50,    45,    65,    13,    23,    24,    25,    26,
+      36,    73,    66,    45,    67,    46,    47,    48,    49,    50,
+      70,    71,    68,    74,    52,    46,    47,    48,    49,    50,
+      45,    49,    50,    72,    53,    42,    76,    14,     0,     0,
+      45,     0,    46,    47,    48,    49,    50,     0,     0,     0,
+       0,    54,    46,    47,    48,    49,    50,     0,    51,     0,
+       0,    69,    45,     0,     0,     0,     0,    45,     0,     0,
+       0,     0,     0,     0,    46,    47,    48,    49,    50,    46,
+      47,    48,    49,    50,    45,     0,    55,     0,     0,     0,
+       0,     0,    45,     0,     0,     0,    46,    47,    48,    49,
+      50,     0,     0,    75,    46,    47,    48,    49,    50,     0,
+      57
 };
 
 static const yytype_int8 yycheck[] =
 {
-      17,     3,    25,    26,    27,    28,     5,    24,     3,    26,
-      27,    28,    19,    32,     9,    34,    33,     0,    13,    21,
-      22,    23,    19,    20,     3,    42,     7,    29,    45,    46,
-      47,    48,    49,    50,     3,    31,    32,    44,    10,    31,
-      32,    11,    12,     6,    51,    32,    18,    27,    28,     8,
-      34,    68,    24,    25,    26,    27,    28,    31,    18,    15,
-      31,    12,     7,    70,    24,    25,    26,    27,    28,    18,
-      -1,    -1,    -1,    33,    -1,    24,    25,    26,    27,    28,
-      18,    -1,    -1,    -1,    33,    -1,    24,    25,    26,    27,
-      28,    18,    -1,    -1,    -1,    33,    -1,    24,    25,    26,
-      27,    28,    -1,    14,    -1,    -1,    33,    18,    -1,    -1,
-      -1,    -1,    18,    24,    25,    26,    27,    28,    24,    25,
-      26,    27,    28,    18,    -1,    31,    -1,    -1,    -1,    24,
-      25,    26,    27,    28,    18,    -1,    31,    -1,    -1,    -1,
-      24,    25,    26,    27,    28,    -1,    30
+      17,     5,     3,    31,    32,    33,    34,    24,     7,    26,
+      27,    28,    19,     3,     0,    38,    33,    40,    10,     9,
+      21,    22,    23,    13,     3,    42,    18,     3,    45,    46,
+      47,    48,    49,    50,    35,    19,    20,    44,    30,    31,
+      32,    33,    34,    18,    51,     6,    37,    38,    37,    38,
+       8,    68,    37,    18,    37,    30,    31,    32,    33,    34,
+      11,    12,    40,    70,    39,    30,    31,    32,    33,    34,
+      18,    33,    34,    15,    39,    38,    12,     7,    -1,    -1,
+      18,    -1,    30,    31,    32,    33,    34,    -1,    -1,    -1,
+      -1,    39,    30,    31,    32,    33,    34,    -1,    14,    -1,
+      -1,    39,    18,    -1,    -1,    -1,    -1,    18,    -1,    -1,
+      -1,    -1,    -1,    -1,    30,    31,    32,    33,    34,    30,
+      31,    32,    33,    34,    18,    -1,    37,    -1,    -1,    -1,
+      -1,    -1,    18,    -1,    -1,    -1,    30,    31,    32,    33,
+      34,    -1,    -1,    37,    30,    31,    32,    33,    34,    -1,
+      36
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_uint8 yystos[] =
 {
-       0,     5,    36,    37,    19,    20,    38,    39,     0,     7,
-      40,     3,     3,     6,    38,     3,     9,    13,    41,    42,
-      43,    45,    46,    31,    32,    31,    32,    32,    34,     3,
-      21,    22,    23,    29,    44,    44,     8,    41,    44,    44,
-      44,    44,    32,    44,    10,    18,    24,    25,    26,    27,
-      28,    14,    33,    33,    33,    31,    44,    30,    41,    44,
-      44,    44,    44,    44,    44,    41,    31,    31,    34,    33,
-      11,    12,    15,    44,    41,    31,    12
+       0,     5,    42,    43,    19,    20,    44,    45,     0,     7,
+      46,     3,     3,     6,    44,     3,     9,    13,    47,    48,
+      49,    51,    52,    37,    38,    37,    38,    38,    40,     3,
+      21,    22,    23,    35,    50,    50,     8,    47,    50,    50,
+      50,    50,    38,    50,    10,    18,    30,    31,    32,    33,
+      34,    14,    39,    39,    39,    37,    50,    36,    47,    50,
+      50,    50,    50,    50,    50,    47,    37,    37,    40,    39,
+      11,    12,    15,    50,    47,    37,    12
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_uint8 yyr1[] =
 {
-       0,    35,    36,    37,    38,    38,    39,    39,    39,    39,
-      40,    41,    41,    42,    42,    42,    43,    43,    44,    44,
-      44,    44,    44,    44,    44,    44,    44,    44,    44,    44,
-      45,    45,    46
+       0,    41,    42,    43,    44,    44,    45,    45,    45,    45,
+      46,    47,    47,    48,    48,    48,    49,    49,    50,    50,
+      50,    50,    50,    50,    50,    50,    50,    50,    50,    50,
+      51,    51,    52
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
@@ -1305,362 +1326,428 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 44 "sil.y" /* yacc.c:1646  */
-    {printf("complete\n");exit(1);}
-#line 1311 "y.tab.c" /* yacc.c:1646  */
+#line 52 "sil.y" /* yacc.c:1646  */
+    {printf("complete\n");print_symbols();exit(1);}
+#line 1332 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 45 "sil.y" /* yacc.c:1646  */
+#line 53 "sil.y" /* yacc.c:1646  */
     {}
-#line 1317 "y.tab.c" /* yacc.c:1646  */
+#line 1338 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 46 "sil.y" /* yacc.c:1646  */
+#line 54 "sil.y" /* yacc.c:1646  */
     {}
-#line 1323 "y.tab.c" /* yacc.c:1646  */
+#line 1344 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 47 "sil.y" /* yacc.c:1646  */
+#line 55 "sil.y" /* yacc.c:1646  */
     {
 						int index_id=check_exist((yyvsp[-1]));
 						if(index_id!=-1)
-							printf("error : name %s already exists\n", (yyvsp[-1])->var_name);
-					  (yyvsp[-1])->size=1;
-					  strcpy((yyvsp[-1])->data_type,"boolean");
-						(yyvsp[-1])->store.f=(bool *)malloc(sizeof(bool));
-						*((yyvsp[-1])->store.f)=false;
-						symtbl[id_count++]=(yyvsp[-1]);
+							printf("error : name %s already exists\n", (yyvsp[-1])->name);
+						tbl *temp_symb = (tbl *) malloc(sizeof(tbl));
+						strcpy(temp_symb->var_name,(yyvsp[-1])->name);
+						temp_symb->size=0;
+					  strcpy(temp_symb->data_type,"boolean");
+						temp_symb->store.f=(bool *)malloc(sizeof(bool));
+						*(temp_symb->store.f)=false;
+						symtbl[id_count++]=temp_symb;
+						free_ptr((yyvsp[-1]));
 						//printf("declaration %s",yylval->data_type);
 					}
-#line 1339 "y.tab.c" /* yacc.c:1646  */
+#line 1363 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 58 "sil.y" /* yacc.c:1646  */
+#line 69 "sil.y" /* yacc.c:1646  */
     {
 				int index_id=check_exist((yyvsp[-1]));
 				if(index_id!=-1)
-				printf("error : name %s already exists\n", (yyvsp[-1])->var_name);
-				(yyvsp[-1])->size=1;
-				strcpy((yyvsp[-1])->data_type,"integer");
-				(yyvsp[-1])->store.i=(int *)malloc(sizeof(int));
-				*((yyvsp[-1])->store.i)=0;
-				symtbl[id_count++]=(yyvsp[-1]);
+					printf("error : name %s already exists\n", (yyvsp[-1])->name);
+				tbl *temp_symb = (tbl *) malloc(sizeof(tbl));
+				strcpy(temp_symb->var_name,(yyvsp[-1])->name);
+				temp_symb->size=0;
+				strcpy(temp_symb->data_type,"integer");
+
+				temp_symb->store.i=(int *)malloc(sizeof(int));
+				*(temp_symb->store.i)=0;
+				symtbl[id_count++]=temp_symb;
+				free_ptr((yyvsp[-1]));
 				//	printf("declaration %s",yylval->data_type);
 		}
-#line 1355 "y.tab.c" /* yacc.c:1646  */
+#line 1383 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 69 "sil.y" /* yacc.c:1646  */
-    {
-			printf("array of integer\n" );
-			int index_id=check_exist((yyvsp[-4]));
-			if(index_id!=-1)
-			printf("error : name %s already exists\n", (yyvsp[-4])->var_name);
-			if(strcmp((yyvsp[-2])->data_type,"boolean")==0)
-				printf("error: inside [] must be an int\n" );
-			(yyvsp[-4])->size=*((yyvsp[-2])->store.i);
-			strcpy((yyvsp[-4])->data_type,"integer");
-			(yyvsp[-4])->store.i=(int *)malloc((yyvsp[-4])->size*sizeof(int));
-			memset((yyvsp[-4])->store.i,0,(yyvsp[-4])->size);
-			symtbl[id_count++]=(yyvsp[-4]);
-
-
-		}
-#line 1375 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 9:
 #line 84 "sil.y" /* yacc.c:1646  */
     {
-			printf("array of bool\n" );
+		//	printf("array of integer\n" );
 			int index_id=check_exist((yyvsp[-4]));
 			if(index_id!=-1)
-			printf("error : name %s already exists\n", (yyvsp[-4])->var_name);
+				printf("error : name %s already exists\n", (yyvsp[-4])->name);
 			if(strcmp((yyvsp[-2])->data_type,"boolean")==0)
 				printf("error: inside [] must be an int\n" );
-			(yyvsp[-4])->size=*((yyvsp[-2])->store.i);
-			strcpy((yyvsp[-4])->data_type,"boolean");
-			(yyvsp[-4])->store.f=(bool *)malloc((yyvsp[-4])->size*sizeof(bool));
-			memset((yyvsp[-4])->store.f,false,(yyvsp[-4])->size);
-			symtbl[id_count++]=(yyvsp[-4]);
 
+				tbl *temp_symb = (tbl *) malloc(sizeof(tbl));
+				strcpy(temp_symb->var_name,(yyvsp[-4])->name);
+				temp_symb->size=(yyvsp[-2])->int_value;
+				strcpy(temp_symb->data_type,"integer");
+
+				temp_symb->store.i=(int *)malloc((yyvsp[-2])->int_value*sizeof(int));
+				memset(temp_symb->store.i,0,(yyvsp[-2])->int_value);
+				symtbl[id_count++]=temp_symb;
+				free_ptr((yyvsp[-4]));
 
 		}
-#line 1395 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 10:
-#line 102 "sil.y" /* yacc.c:1646  */
-    {}
-#line 1401 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 11:
-#line 103 "sil.y" /* yacc.c:1646  */
-    {}
 #line 1407 "y.tab.c" /* yacc.c:1646  */
     break;
 
-  case 12:
-#line 104 "sil.y" /* yacc.c:1646  */
-    {}
-#line 1413 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 13:
-#line 105 "sil.y" /* yacc.c:1646  */
-    {}
-#line 1419 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 14:
-#line 106 "sil.y" /* yacc.c:1646  */
-    {}
-#line 1425 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 15:
-#line 107 "sil.y" /* yacc.c:1646  */
-    {}
-#line 1431 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 16:
-#line 110 "sil.y" /* yacc.c:1646  */
+  case 9:
+#line 103 "sil.y" /* yacc.c:1646  */
     {
-														printf("in id = expr\n");
-														(yyval) = (tbl*)malloc(sizeof(tbl));
-														strcpy((yyval)->var_name,"default");
-														(yyval)->size =1;
-														strcpy((yyval)->data_type,"boolean");
-														int index_id=check_exist((yyvsp[-3]));
-														printf("%d\n",index_id );
-														if( index_id !=-1 && check_dtype(symtbl[index_id],(yyvsp[-1])->data_type))
-															{
-																printf("expr evaluated to %d \n",*(yyvsp[-1])->store.i);
-																if(strcmp(symtbl[index_id]->data_type,"boolean"))
-																{
-																	*(symtbl[index_id]->store.f)=*((yyvsp[-1])->store.f);
-																}
-																else
-																	*(symtbl[index_id]->store.i)=*((yyvsp[-1])->store.i);
+			//printf("array of bool\n" );
+			int index_id=check_exist((yyvsp[-4]));
+			if(index_id!=-1)
+				printf("error : name %s already exists\n", (yyvsp[-4])->name);
+			if(strcmp((yyvsp[-2])->data_type,"boolean")==0)
+				printf("error: inside [] must be an int\n" );
+			tbl *temp_symb = (tbl *) malloc(sizeof(tbl));
+			strcpy(temp_symb->var_name,(yyvsp[-4])->name);
+			temp_symb->size=(yyvsp[-2])->int_value;
+			strcpy(temp_symb->data_type,"boolean");
 
-																(yyval)->store.f = (bool *) malloc(sizeof(bool));
-																*((yyval)->store.f) = true;
+			temp_symb->store.f=(bool *)malloc((yyvsp[-2])->int_value*sizeof(bool));
+			memset(temp_symb->store.f,false,(yyvsp[-2])->int_value);
+			symtbl[id_count++]=temp_symb;
+			free_ptr((yyvsp[-4]));
 
-
-															}
-														else
-															{printf("kya error  cannot evaluate!\n");
-															(yyval)->store.f = (bool *) malloc(sizeof(bool));
-															*((yyval)->store.f) = false;
-														}
-
-													}
-#line 1466 "y.tab.c" /* yacc.c:1646  */
+		}
+#line 1430 "y.tab.c" /* yacc.c:1646  */
     break;
 
-  case 17:
-#line 140 "sil.y" /* yacc.c:1646  */
-    {
-
-						printf("in id = expr[]\n");
-						(yyval) = (tbl*)malloc(sizeof(tbl));
-						strcpy((yyval)->var_name,"default");
-
-						if(strcmp((yyvsp[-4])->data_type,"boolean")==0)
-							printf("error: inside [] must be an int\n" );
-
-						(yyval)->size =1;
-						strcpy((yyval)->data_type,"boolean");
-						int index_id=check_exist((yyvsp[-6]));
-						printf("%d\n",index_id );
-					if(symtbl[index_id]->size <= *((yyvsp[-4])->store.i))
-						printf("illegal mem. ref out of index\n");
-					printf("the datatyp is %s\n", (yyvsp[-1])->data_type);
-						if( index_id !=-1 && check_dtype(symtbl[index_id],(yyvsp[-1])->data_type))
-							{
-								printf("expr evaluated to %d \n",*((yyvsp[-1])->store.i));
-								if(strcmp(symtbl[index_id]->data_type,"boolean"))
-								{
-									*(symtbl[index_id]->store.f  + *((yyvsp[-4])->store.i))=*((yyvsp[-1])->store.f );
-								}
-								else
-									*(symtbl[index_id]->store.i + *((yyvsp[-4])->store.i))=*((yyvsp[-1])->store.i);
-
-								(yyval)->store.f = (bool *) malloc(sizeof(bool));
-								*((yyval)->store.f) = true;
-
-
-							}
-						else
-							{printf("kya error  cannot evaluate2!\n");
-							(yyval)->store.f = (bool *) malloc(sizeof(bool));
-							*((yyval)->store.f) = false;
-						}
-
-
-
-					}
-#line 1511 "y.tab.c" /* yacc.c:1646  */
+  case 10:
+#line 124 "sil.y" /* yacc.c:1646  */
+    {printf("evaluating the ast\n"); ;evaluate_ast((yyvsp[-1]));}
+#line 1436 "y.tab.c" /* yacc.c:1646  */
     break;
 
-  case 18:
-#line 182 "sil.y" /* yacc.c:1646  */
+  case 11:
+#line 125 "sil.y" /* yacc.c:1646  */
     {
-												if(strcmp((yyvsp[-2])->data_type,(yyvsp[0])->data_type)==0 && check_dtype((yyvsp[-2]),"integer"))
-												{
-													(yyval) = (tbl*)malloc(sizeof(tbl));
-													strcpy((yyval)->var_name,"default");
-													(yyval)->size =1;
-													strcpy((yyval)->data_type,"integer");
-													(yyval)->store.i = (int *) malloc(sizeof(int));
-												*((yyval)->store.i)=*((yyvsp[-2])->store.i)+*((yyvsp[0])->store.i);
-												}else printf("error: conflicting data types or not integer data types\n");
+													ast *temp = (ast *)malloc(sizeof(ast));
+													(yyval)=temp;
+													strcpy(temp->data_type,"void");
+													(yyval)->node_type = SLIST;
+
+													(yyval)->ptr1 = (yyvsp[-1]);
+													(yyval)->ptr2 = (yyvsp[0]);
+
 
 
 
 
 }
-#line 1531 "y.tab.c" /* yacc.c:1646  */
+#line 1455 "y.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 12:
+#line 139 "sil.y" /* yacc.c:1646  */
+    {
+
+												(yyval)=(yyvsp[0]);
+
+
+
+			}
+#line 1467 "y.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 13:
+#line 146 "sil.y" /* yacc.c:1646  */
+    {
+												(yyval)=(yyvsp[0]);
+
+
+}
+#line 1477 "y.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 14:
+#line 151 "sil.y" /* yacc.c:1646  */
+    {
+												(yyval)=(yyvsp[0]);
+	}
+#line 1485 "y.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 15:
+#line 154 "sil.y" /* yacc.c:1646  */
+    {
+												(yyval)=(yyvsp[0]);
+	}
+#line 1493 "y.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 16:
+#line 159 "sil.y" /* yacc.c:1646  */
+    {
+													//	printf("in id = expr\n");
+														(yyval) = (ast*)malloc(sizeof(ast));
+														strcpy((yyval)->name,"assign");
+
+														(yyval)->node_type = EQ;
+														strcpy((yyval)->data_type,"boolean");
+														int index_id=check_exist((yyvsp[-3]));
+
+														printf("%d\n",index_id );
+
+														//printf("%s\n",$3->data_type );
+														//printf("%s %s\n",symtbl[index_id]->data_type,symtbl[index_id]->var_name);
+														//printf("%d\n",check_dtype(symtbl[index_id],$3->data_type) );
+														if( index_id !=-1 && strcmp(symtbl[index_id]->data_type,(yyvsp[-1])->data_type)==0)
+															{
+
+/*
+
+																if(strcmp(symtbl[index_id]->data_type,"boolean"))
+																{
+																	printf("expr evaluated to %d \n",$3->int_value);
+																	*(symtbl[index_id]->store.f)=$3->bool_value;
+
+
+																}
+																else
+																{
+																		printf("expr evaluated to %d \n",$3->bool_value);
+																		*(symtbl[index_id]->store.i)=$3->int_value;
+
+																}
+*/
+																(yyval)->bool_value = true;
+
+
+
+
+															}
+														else
+															{
+																printf("kya error  cannot evaluate unmatching dtypes %s ... %s\n",symtbl[index_id]->data_type,(yyvsp[-1])->data_type);
+																(yyval)->bool_value = false;
+														}
+
+														(yyval)->ptr1= (yyvsp[-3]);
+														(yyval)->ptr1->entry = index_id;               //we need this
+														strcpy((yyval)->ptr1->data_type,(yyvsp[-1])->data_type);
+														(yyval)->ptr2= (yyvsp[-1]);
+
+
+													}
+#line 1550 "y.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 17:
+#line 211 "sil.y" /* yacc.c:1646  */
+    {
+
+					//	printf("in id = expr[]\n");
+						(yyval) = (ast*)malloc(sizeof(ast));
+						strcpy((yyval)->name,"assign");
+
+						if(strcmp((yyvsp[-4])->data_type,"boolean")==0)
+							printf("error: inside [] must be an int\n" );
+						(yyval)->node_type = EQ;
+
+						strcpy((yyval)->data_type,"boolean");
+						int index_id=check_exist((yyvsp[-6]));
+					//	printf("%d\n",index_id );
+						(yyval)->entry = index_id;
+					//printf("the datatype is %s\n", $6->data_type);
+						if( index_id !=-1 && strcmp(symtbl[index_id]->data_type,(yyvsp[-1])->data_type)==0)
+							{
+/*
+								if(strcmp(symtbl[index_id]->data_type,"boolean"))
+								{
+									printf("expr evaluated to %d \n",$6->bool_value);
+									*(symtbl[index_id]->store.f  + ($3->int_value))=($6->bool_value );
+								}
+								else{
+									printf("expr evaluated to %d \n",$6->int_value);
+									*(symtbl[index_id]->store.i + ($3->int_value))=($6->int_value);
+
+								}
+*/
+
+								((yyval)->bool_value) = true;
+
+
+							}
+						else
+							{printf("kya error  cannot evaluate2!\n");
+
+							((yyval)->bool_value) = false;
+						}
+
+						(yyval)->ptr1= (yyvsp[-6]);
+						(yyval)->ptr1->entry = index_id;               //we need this
+						strcpy((yyval)->ptr1->data_type,(yyvsp[-4])->data_type);
+						(yyval)->ptr2= (yyvsp[-4]);
+						(yyval)->ptr3= (yyvsp[-1]);
+
+
+					}
+#line 1603 "y.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 18:
+#line 261 "sil.y" /* yacc.c:1646  */
+    {
+												if(strcmp((yyvsp[-2])->data_type,(yyvsp[0])->data_type)==0 && check_dtype((yyvsp[-2]),"integer"))
+												{
+													(yyval) = (ast*)malloc(sizeof(ast));
+													strcpy((yyval)->name,"plus");
+
+													(yyval)->node_type=PLUS;
+													strcpy((yyval)->data_type,"integer");
+
+												}else printf("error: conflicting data types or not integer data types %s %s\n",(yyvsp[-2])->data_type,(yyvsp[0])->data_type);
+
+												(yyval)->ptr1=(yyvsp[-2]);
+												(yyval)->ptr2=(yyvsp[0]);
+
+
+
+
+}
+#line 1626 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 197 "sil.y" /* yacc.c:1646  */
+#line 279 "sil.y" /* yacc.c:1646  */
     {
 		if(strcmp((yyvsp[-2])->data_type,(yyvsp[0])->data_type)==0 && check_dtype((yyvsp[-2]),"integer"))
 		{
-			(yyval) = (tbl*)malloc(sizeof(tbl));
-			strcpy((yyval)->var_name,"default");
-			(yyval)->size =1;
+			(yyval) = (ast*)malloc(sizeof(ast));
+			strcpy((yyval)->name,"minus");
+
+			(yyval)->node_type=MINUS;
 			strcpy((yyval)->data_type,"integer");
-			(yyval)->store.i = (int *) malloc(sizeof(int));
-		*((yyval)->store.i)=*((yyvsp[-2])->store.i) = *((yyvsp[0])->store.i);
+
 		}else printf("error: conflicting data types or not integer data types\n");
 
-
+		(yyval)->ptr1=(yyvsp[-2]);
+		(yyval)->ptr2=(yyvsp[0]);
 
 
 	}
-#line 1551 "y.tab.c" /* yacc.c:1646  */
+#line 1647 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 212 "sil.y" /* yacc.c:1646  */
+#line 295 "sil.y" /* yacc.c:1646  */
     {
 
 		if(strcmp((yyvsp[-2])->data_type,(yyvsp[0])->data_type)==0 && check_dtype((yyvsp[-2]),"integer"))
 		{
-			(yyval) = (tbl*)malloc(sizeof(tbl));
-			strcpy((yyval)->var_name,"default");
-			(yyval)->size =1;
+			(yyval) = (ast*)malloc(sizeof(ast));
+			strcpy((yyval)->name,"mul");
+
+			(yyval)->node_type=MUL;
 			strcpy((yyval)->data_type,"integer");
-			(yyval)->store.i = (int *) malloc(sizeof(int));
-		*((yyval)->store.i)=*((yyvsp[-2])->store.i) * *((yyvsp[0])->store.i);
+
 		}else printf("error: conflicting data types or not integer data types\n");
 
-
+		(yyval)->ptr1=(yyvsp[-2]);
+		(yyval)->ptr2=(yyvsp[0]);
 
 	}
-#line 1571 "y.tab.c" /* yacc.c:1646  */
+#line 1668 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 227 "sil.y" /* yacc.c:1646  */
+#line 311 "sil.y" /* yacc.c:1646  */
     {
 
 		if(strcmp((yyvsp[-2])->data_type,(yyvsp[0])->data_type)==0 && check_dtype((yyvsp[-2]),"integer"))
 		{
-			(yyval) = (tbl*)malloc(sizeof(tbl));
-			strcpy((yyval)->var_name,"default");
-			(yyval)->size =1;
+			(yyval) = (ast*)malloc(sizeof(ast));
+			strcpy((yyval)->name,"div");
+
+			(yyval)->node_type=DIV;
 			strcpy((yyval)->data_type,"integer");
-			(yyval)->store.i = (int *) malloc(sizeof(int));
-		*((yyval)->store.i)=*((yyvsp[-2])->store.i) / *((yyvsp[0])->store.i);
+
 		}else printf("error: conflicting data types or not integer data types\n");
 
+		(yyval)->ptr1=(yyvsp[-2]);
+		(yyval)->ptr2=(yyvsp[0]);
 	}
-#line 1589 "y.tab.c" /* yacc.c:1646  */
+#line 1688 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 240 "sil.y" /* yacc.c:1646  */
+#line 326 "sil.y" /* yacc.c:1646  */
     {
 
 		if(strcmp((yyvsp[-2])->data_type,(yyvsp[0])->data_type)==0)
 		{
-			(yyval) = (tbl*)malloc(sizeof(tbl));
-			strcpy((yyval)->var_name,"default");
-			(yyval)->size =1;
+			(yyval) = (ast*)malloc(sizeof(ast));
+			strcpy((yyval)->name,"eqeq");
+
+			(yyval)->node_type=EQEQ;
 			strcpy((yyval)->data_type,"boolean");
-			(yyval)->store.f = (bool *) malloc(sizeof(bool));
-			if(strcmp((yyvsp[-2])->data_type,"integer")==0)
-				*((yyval)->store.f)=*((yyvsp[-2])->store.i) == *((yyvsp[0])->store.i);
-			else
-				*((yyval)->store.f)=*((yyvsp[-2])->store.f) == *((yyvsp[0])->store.f);
+
+
 		}else printf("error: conflicting data types\n");
+		(yyval)->ptr1=(yyvsp[-2]);
+		(yyval)->ptr2=(yyvsp[0]);
 
 
 	}
-#line 1611 "y.tab.c" /* yacc.c:1646  */
+#line 1710 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 257 "sil.y" /* yacc.c:1646  */
+#line 343 "sil.y" /* yacc.c:1646  */
     {
-		if(strcmp((yyvsp[-2])->data_type,(yyvsp[0])->data_type)==0 )
+		if(strcmp((yyvsp[-2])->data_type,(yyvsp[0])->data_type)==0)
 		{
-			(yyval) = (tbl*)malloc(sizeof(tbl));
-			strcpy((yyval)->var_name,"default");
-			(yyval)->size =1;
-			strcpy((yyval)->data_type,"boolean");
-			(yyval)->store.f = (bool *) malloc(sizeof(bool));
-			if(strcmp((yyvsp[-2])->data_type,"integer")==0)
-				*((yyval)->store.f)=*((yyvsp[-2])->store.i) != *((yyvsp[0])->store.i);
-			else
-				*((yyval)->store.f)=*((yyvsp[-2])->store.f) != *((yyvsp[0])->store.f);
-		}else printf("error: conflicting data types or not integer data types\n");
+			(yyval) = (ast*)malloc(sizeof(ast));
+			strcpy((yyval)->name,"neq");
 
+			(yyval)->node_type=NEQ;
+			strcpy((yyval)->data_type,"boolean");
+
+
+		}else printf("error: conflicting data types\n");
+		(yyval)->ptr1=(yyvsp[-2]);
+		(yyval)->ptr2=(yyvsp[0]);
 
 	}
-#line 1632 "y.tab.c" /* yacc.c:1646  */
+#line 1730 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 273 "sil.y" /* yacc.c:1646  */
+#line 358 "sil.y" /* yacc.c:1646  */
     {
-		printf("id[]\n");
+	//	printf("id[]\n");
 		int index_id=check_exist((yyvsp[-3]));
 		if( index_id !=-1)
 			{
 
 
 				strcpy((yyvsp[-3])->data_type,symtbl[index_id]->data_type);
-				strcpy((yyvsp[-3])->var_name, "default_array");
-				(yyvsp[-3])->size = symtbl[index_id]->size;
-
+				strcpy((yyvsp[-3])->name, "id_array");
+				(yyvsp[-3])->entry = index_id;
+				(yyvsp[-3])->node_type=ID;
 				if(strcmp((yyvsp[-1])->data_type,"boolean")==0)
 					printf("error: inside [] must be an int\n" );
-				if((yyvsp[-3])->size <= *((yyvsp[-1])->store.i))
-					printf("in id[expr] illegal mem. ref out of index max= %d expr=%d\n",(yyvsp[-3])->size,*((yyvsp[-1])->store.i));
 
-				if(strcmp(symtbl[index_id]->data_type,"boolean"))
-				{
-					(yyvsp[-3])->store.f = (bool *)malloc(sizeof(bool));
-					*((yyvsp[-3])->store.f) =*(symtbl[index_id]->store.f + *((yyvsp[-1])->store.i) );
-				}
-				else
-				{
-					(yyvsp[-3])->store.i = (int *)malloc(sizeof(int));
-					*((yyvsp[-3])->store.i) =*(symtbl[index_id]->store.i + *((yyvsp[-1])->store.i));
 
-				}
 					(yyval)=(yyvsp[-3]);
+					(yyval)->ptr1=(yyvsp[-1]);
 
 
 			}
@@ -1668,44 +1755,39 @@ yyreduce:
 					printf("error not declared\n" );
 
 
-		printf("the datatype is %s name is %s\n",(yyvsp[-3])->data_type,(yyvsp[-3])->var_name );
+	//	printf("the datatype is %s name is %s\n",$1->data_type,$1->name );
 
+
+	//	free_ptr($3);
 
 
 	}
-#line 1677 "y.tab.c" /* yacc.c:1646  */
+#line 1766 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 313 "sil.y" /* yacc.c:1646  */
+#line 389 "sil.y" /* yacc.c:1646  */
     {(yyval)=(yyvsp[-1]);}
-#line 1683 "y.tab.c" /* yacc.c:1646  */
+#line 1772 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 314 "sil.y" /* yacc.c:1646  */
+#line 390 "sil.y" /* yacc.c:1646  */
     {
-			printf("id\n");
+		//	printf("id\n");
 			int index_id=check_exist((yyvsp[0]));
 			if( index_id !=-1)
 				{
 
 
 					strcpy((yyvsp[0])->data_type,symtbl[index_id]->data_type);
-					strcpy((yyvsp[0])->var_name,symtbl[index_id]->var_name);
-					(yyvsp[0])->size = symtbl[index_id]->size;
-					if(strcmp(symtbl[index_id]->data_type,"boolean"))
-					{
-						(yyvsp[0])->store.f = (bool *)malloc(sizeof(bool));
-						*((yyvsp[0])->store.f) =*(symtbl[index_id]->store.f);
-					}
-					else
-					{
-						(yyvsp[0])->store.i = (int *)malloc(sizeof(int));
-						*((yyvsp[0])->store.i) =*(symtbl[index_id]->store.i);
+					strcpy((yyvsp[0])->name, "id");
+					(yyvsp[0])->entry = index_id;
+					(yyvsp[0])->node_type=ID;
 
-					}
-				   	(yyval)=(yyvsp[0]);
+					(yyvsp[0])->ptr1 = NULL;
+
+						(yyval)=(yyvsp[0]);
 
 
 				}
@@ -1713,53 +1795,79 @@ yyreduce:
 						printf("error not declared\n" );
 
 
-			printf("the datatype is %s name is %s\n",(yyvsp[0])->data_type,(yyvsp[0])->var_name );
-
+		//	printf("id :the datatype is %s name is %s\n",$1->data_type,$1->name );
 
 		}
-#line 1721 "y.tab.c" /* yacc.c:1646  */
+#line 1802 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 347 "sil.y" /* yacc.c:1646  */
+#line 415 "sil.y" /* yacc.c:1646  */
     {
 		(yyval)=(yyvsp[0]);
 	}
-#line 1729 "y.tab.c" /* yacc.c:1646  */
+#line 1810 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 350 "sil.y" /* yacc.c:1646  */
+#line 418 "sil.y" /* yacc.c:1646  */
     {(yyval)=(yyvsp[0]);}
-#line 1735 "y.tab.c" /* yacc.c:1646  */
+#line 1816 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 351 "sil.y" /* yacc.c:1646  */
+#line 419 "sil.y" /* yacc.c:1646  */
     {(yyval)=(yyvsp[0]);}
-#line 1741 "y.tab.c" /* yacc.c:1646  */
+#line 1822 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 355 "sil.y" /* yacc.c:1646  */
-    {}
-#line 1747 "y.tab.c" /* yacc.c:1646  */
+#line 423 "sil.y" /* yacc.c:1646  */
+    {
+
+				(yyval)=(ast*)malloc(sizeof(ast));
+				strcpy((yyval)->name,"if");
+				(yyval)->node_type=IF;
+				(yyval)->ptr1=(yyvsp[-3]);
+				(yyval)->ptr2=(yyvsp[-1]);
+				(yyval)->ptr3=NULL;
+
+}
+#line 1837 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 356 "sil.y" /* yacc.c:1646  */
-    {}
-#line 1753 "y.tab.c" /* yacc.c:1646  */
+#line 433 "sil.y" /* yacc.c:1646  */
+    {
+		(yyval)=(ast*)malloc(sizeof(ast));
+		strcpy((yyval)->name,"ifelse");
+		(yyval)->node_type=IF;
+		(yyval)->ptr1=(yyvsp[-5]);
+		(yyval)->ptr2=(yyvsp[-3]);
+		(yyval)->ptr3=(yyvsp[-1]);
+
+	}
+#line 1851 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 358 "sil.y" /* yacc.c:1646  */
-    {}
-#line 1759 "y.tab.c" /* yacc.c:1646  */
+#line 443 "sil.y" /* yacc.c:1646  */
+    {
+	(yyval)=(ast*)malloc(sizeof(ast));
+	strcpy((yyval)->name,"while");
+	(yyval)->node_type=WHILE;
+	(yyval)->ptr1=(yyvsp[-3]);
+	(yyval)->ptr2=(yyvsp[-1]);
+	(yyval)->ptr3=NULL;
+
+
+
+}
+#line 1867 "y.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1763 "y.tab.c" /* yacc.c:1646  */
+#line 1871 "y.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1987,14 +2095,14 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 363 "sil.y" /* yacc.c:1906  */
+#line 458 "sil.y" /* yacc.c:1906  */
 
 
-int check_exist(tbl *yylval)
+int check_exist(ast *yylval)
 {
 	int i;
 	for(i=0;i<id_count;i++ )
-		if(strcmp(symtbl[i]->var_name,yylval->var_name)==0)
+		if(strcmp(symtbl[i]->var_name,yylval->name)==0)
 			break;
 
 	if(i!=id_count )
@@ -2002,17 +2110,192 @@ int check_exist(tbl *yylval)
 	return -1;
 
 }
-int check_dtype(tbl *yylval,char *a)
+int check_dtype(ast *yylval,char *b)
 {
-	if( strcmp(yylval->data_type,a)==0)
+//	printf("yoyoy...%s %s\n",yylval->data_type ,yylval->name);
+	//printf("%s\n", b);
+	if( strcmp(yylval->data_type,b)==0)
 		return 1;
 	return 0;
 
+}
+void free_ptr(ast *yylval)
+{
+	if(yylval==NULL)
+	{
+		printf("cannot free NULL ptr\n");
+		return;
+	}
+	free(yylval);
+	yylval =NULL;
 }
 yyerror()
 {
 	printf("error\n");
 	return;
+}
+void evaluate_ast(ast *root)
+{
+	if(root==NULL)
+		{printf("should not print its NULLLLLLLLLL\n");return;}
+	if(root->node_type==SLIST)
+	{
+		printf("SLIST\n" );
+		evaluate_ast(root->ptr1); // stmnt
+		evaluate_ast(root->ptr2); // slist
+	}
+	else if(root->node_type== EQ)
+	{
+		printf("EQ\n" );
+		evaluate_ast(root->ptr2);
+		printf("id_ind : %d  name: %s rhs: %d  dt: %s\n ",root->ptr1->entry,root->ptr1->name,root->ptr2->int_value,root->ptr1->data_type );
+
+		if(symtbl[root->ptr1->entry]->size==0)
+		{
+			printf("in eq not array\n" );
+
+			if(strcmp(root->ptr1->data_type,"integer")==0)
+			{
+
+					*(symtbl[root->ptr1->entry]->store.i)= root->ptr2->int_value;
+				//	print_symbols();
+			}
+			else
+				*(symtbl[root->ptr1->entry]->store.f)= root->ptr2->bool_value;
+		}else // array
+		{
+
+			evaluate_ast(root->ptr3);
+			if(strcmp(root->ptr1->data_type,"integer")==0)
+				*(symtbl[root->ptr1->entry]->store.i + root->ptr2->int_value )= root->ptr3->int_value;
+			else
+				*(symtbl[root->ptr1->entry]->store.f + root->ptr2->int_value )= root->ptr3->bool_value;
+		}
+		//print_symbols();
+	}
+	else if(root->node_type== PLUS)
+	{
+		printf("PLUS\n" );
+		evaluate_ast(root->ptr1);
+		evaluate_ast(root->ptr2);
+		root->int_value=root->ptr1->int_value + root->ptr2->int_value;
+	}
+	else if(root->node_type== MINUS)
+	{
+		printf("MINUS\n" );
+		evaluate_ast(root->ptr1);
+		evaluate_ast(root->ptr2);
+		root->int_value=root->ptr1->int_value - root->ptr2->int_value;
+	}
+	else if(root->node_type== MUL)
+	{
+		printf("MUL\n" );
+		evaluate_ast(root->ptr1);
+		evaluate_ast(root->ptr2);
+		root->int_value=root->ptr1->int_value - root->ptr2->int_value;
+	}
+	else if(root->node_type== DIV)
+	{
+		printf("DIV\n");
+		evaluate_ast(root->ptr1);
+		evaluate_ast(root->ptr2);
+		root->int_value=root->ptr1->int_value / root->ptr2->int_value;
+	}
+	else if(root->node_type== EQEQ)
+	{
+		printf("EQEQ\n" );
+		evaluate_ast(root->ptr1);
+		evaluate_ast(root->ptr2);
+		if(strcmp(root->ptr1->data_type,"integer")==0)
+			root->bool_value=root->ptr1->int_value == root->ptr2->int_value;
+		else
+			root->bool_value=root->ptr1->bool_value == root->ptr2->bool_value;
+	}
+	else if(root->node_type== NEQ)
+	{
+		printf("NEQ\n" );
+		evaluate_ast(root->ptr1);
+		evaluate_ast(root->ptr2);
+		if(strcmp(root->ptr1->data_type,"integer")==0)
+			root->bool_value=root->ptr1->int_value != root->ptr2->int_value;
+		else
+			root->bool_value=root->ptr1->bool_value != root->ptr2->bool_value;
+	}
+	else if(root->node_type== ID)
+	{
+		printf("ID\n" );
+		if(root->ptr1==NULL) // not array
+		{
+			printf("not array id_ind: %d\n",root->entry);
+			if(strcmp(root->data_type,"integer")==0)
+				root->int_value = *(symtbl[root->entry]->store.i);
+			else
+				root->bool_value = *(symtbl[root->entry]->store.f);
+		}
+		else //array
+		{
+			evaluate_ast(root->ptr1);
+			if(strcmp(root->data_type,"integer")==0)
+				root->int_value = *(symtbl[root->entry]->store.i + root->ptr1->int_value);
+			else
+				root->bool_value = *(symtbl[root->entry]->store.f + root->ptr1->int_value);
+		}
+
+	}
+	else if(root->node_type== IF)
+	{
+		printf("IF\n");
+		evaluate_ast(root->ptr1);
+		printf("bool val: %d\n",root->ptr1->bool_value );
+		if(root->ptr1->bool_value)
+			evaluate_ast(root->ptr2);
+		else
+			{
+				if(root->ptr3!=NULL)  // else
+				evaluate_ast(root->ptr3);
+			}
+	}
+	else if(root->node_type == WHILE)
+	{
+		printf("WHILE\n" );
+		while(1)
+		{
+			evaluate_ast(root->ptr1);
+			if(root->ptr1->bool_value==false)
+				break;
+			evaluate_ast(root->ptr2);
+		}
+	}
+	else if(root->node_type == NUM || root->node_type == T || root->node_type == F)
+	{
+		printf("NUM/T/F %d\n",root->int_value );
+			return;
+	}
+	else
+	{
+		printf("shit...%s!! \n", root->name );
+	}
+
+}
+
+void print_symbols()
+{
+	int i;
+	printf("\n");
+	for(i=0;i<id_count;i++)
+	{
+		if(symtbl[i]->size == 0){
+		printf("%s   ", symtbl[i]->var_name);
+		printf("%d\n", *(symtbl[i]->store.i));
+	}
+	else{
+		printf("%s   ", symtbl[i]->var_name);
+		int j;
+		for(j=0;j<symtbl[i]->size;j++)
+			printf("%d ", *(symtbl[i]->store.i + j));
+		printf("\n");
+	}
+	}
 }
 
 main()

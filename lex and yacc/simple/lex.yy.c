@@ -511,8 +511,10 @@ char *yytext;
 #include <stdbool.h>
 #include "symtbl.h"
 #include "y.tab.h"
-
-#line 516 "lex.yy.c"
+#include "astree.h"
+#define YYSTYPE ast*
+ast *ptr;
+#line 518 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -726,9 +728,9 @@ YY_DECL
 		}
 
 	{
-#line 10 "sil.l"
+#line 12 "sil.l"
 
-#line 732 "lex.yy.c"
+#line 734 "lex.yy.c"
 
 	while ( 1 )		/* loops until end-of-file is reached */
 		{
@@ -788,151 +790,152 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 11 "sil.l"
+#line 13 "sil.l"
 {}
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 12 "sil.l"
+#line 14 "sil.l"
 {return DECL;}
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 13 "sil.l"
+#line 15 "sil.l"
 {return ENDDECL;}
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 14 "sil.l"
+#line 16 "sil.l"
 {return BEG;}
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 15 "sil.l"
+#line 17 "sil.l"
 {return END;}
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 16 "sil.l"
+#line 18 "sil.l"
 {return IF;}
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 17 "sil.l"
+#line 19 "sil.l"
 {return THEN;}
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 18 "sil.l"
+#line 20 "sil.l"
 {return ELSE;}
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 19 "sil.l"
+#line 21 "sil.l"
 {return ENDIF;}
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 20 "sil.l"
+#line 22 "sil.l"
 {return WHILE;}
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 21 "sil.l"
+#line 23 "sil.l"
 {return DO;}
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 22 "sil.l"
+#line 24 "sil.l"
 {return ENDWHILE;}
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 23 "sil.l"
+#line 25 "sil.l"
 {return READ;}
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 24 "sil.l"
+#line 26 "sil.l"
 {return WRITE;}
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 25 "sil.l"
+#line 27 "sil.l"
 {return EQEQ;}
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 26 "sil.l"
+#line 28 "sil.l"
 {return NEQ;}
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 27 "sil.l"
+#line 29 "sil.l"
 {}
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 28 "sil.l"
+#line 30 "sil.l"
 {return BOOLEAN;}
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 29 "sil.l"
+#line 31 "sil.l"
 {return INTEGER;}
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 30 "sil.l"
+#line 32 "sil.l"
 {
-	yylval=(tbl*)malloc(sizeof(tbl));
-	strcpy(yylval->var_name,yytext);
-	strcpy(yylval->data_type,"integer");
-	yylval->store.i = (int *)malloc(sizeof(int));
-	*(yylval->store.i)=atoi(yytext);
+	ptr=(ast *)malloc(sizeof(ast));
+	ptr->int_value=atoi(yytext);
+	ptr->node_type=NUM;
+	strcpy(ptr->data_type,"integer");
+	yylval=ptr;
 	return NUM;}
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 37 "sil.l"
+#line 39 "sil.l"
 {
-	yylval=(tbl*)malloc(sizeof(tbl));
-	strcpy(yylval->var_name,yytext);
-	strcpy(yylval->data_type,"boolean");
-	yylval->store.f= (bool *)malloc(sizeof(bool));
-	*(yylval->store.f)=true;
+	ptr=(ast*)malloc(sizeof(ast));
+	ptr->bool_value=true;
+	ptr->node_type=T;
+	strcpy(ptr->data_type,"boolean");
+	yylval=ptr;
 	return T;}
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 44 "sil.l"
+#line 46 "sil.l"
 {
-	yylval=(tbl*)malloc(sizeof(tbl));
-	strcpy(yylval->var_name,yytext);
-	strcpy(yylval->data_type,"boolean");
-	yylval->store.f = (bool *)malloc(sizeof(bool));
-	*(yylval->store.f)=false;
+	ptr=(ast*)malloc(sizeof(ast));
+	ptr->bool_value=false;
+	ptr->node_type=F;
+	strcpy(ptr->data_type,"boolean");
+	yylval=ptr;
 	return F;}
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 51 "sil.l"
+#line 53 "sil.l"
 {
-												yylval=(tbl*)malloc(sizeof(tbl));
-												strcpy(yylval->var_name,yytext);
+												ptr=(ast*)malloc(sizeof(ast));
+												strcpy(ptr->name,yytext);
+												yylval=ptr;
 												return ID;}
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 56 "sil.l"
+#line 59 "sil.l"
 {return *yytext;}
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 60 "sil.l"
+#line 63 "sil.l"
 ECHO;
 	YY_BREAK
-#line 936 "lex.yy.c"
+#line 939 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1927,7 +1930,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 59 "sil.l"
+#line 62 "sil.l"
 
 
 yywrap(){

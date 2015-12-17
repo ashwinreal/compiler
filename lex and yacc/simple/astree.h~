@@ -1,0 +1,11 @@
+#include "symbtbl.h"
+typedef struct astre
+{
+	char data_type[32];
+	int node_type; // 0 for operators
+								// 1 for stmnts
+	char name[32];
+	
+
+}
+
