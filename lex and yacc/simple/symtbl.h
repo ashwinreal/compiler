@@ -1,15 +1,11 @@
 // for symbols
 #include <stdbool.h>
-union type{
-	bool *f;
-	int *i;
 
-	};
 typedef struct ttbl{
 	char var_name[32];
 	int size;
 	char data_type[32];
-	union type store;
+	int store;
 } tbl;
 
 

@@ -8,10 +8,18 @@
 #define MAX_SYMBOLS 100
 tbl *symtbl[MAX_SYMBOLS];
 int id_count=0;
-
+int label_ctr=0;
+int reg_ctr=0;
+int var_mem=0;
 void free_ptr(ast *yylval);
-void evaluate_ast(ast *root);
+int evaluate_ast(ast *root);
 void print_symbols();
+int allocate_mem(int size);
+int get_reg();
+void free_reg();
+int get_label();
+FILE *fp;
+
 %}
 
 %token ID
@@ -41,7 +49,7 @@ void print_symbols();
 %token DIV
 %token SLIST
 %token EQ
-
+%token DLIST
 
 %left EQEQ NEQ
 %left '+' '-'
@@ -49,9 +57,34 @@ void print_symbols();
 %left '(' ')'
 
 %%
-pgm : pgmdecl pgmbody {printf("complete\n");print_symbols();exit(1);};
-pgmdecl : DECL dlist ENDDECL {};
-dlist : dstmt dlist | dstmt {};
+pgm : pgmdecl pgmbody {
+											printf("complete ast\n");
+
+											evaluate_ast($1);       // declaration
+											print_symbols();
+											fprintf(fp, "START\n" );
+											evaluate_ast($2);				// body
+											fprintf(fp, "HALT\n" );
+
+											fclose(fp);
+
+											exit(1);
+										};
+pgmdecl : DECL dlist ENDDECL {
+								$$=$2;
+
+};
+dlist : dstmt dlist{
+
+										$$=(ast *) malloc(sizeof(ast));
+										$$->node_type = DLIST;
+										strcpy($$->name,"dlist");
+										$$->ptr1=$1;
+										$$->ptr2=$2;
+										}
+ 			| dstmt {$$=$1;
+				//printf("yoyoy %d\n",$$->node_type );
+			};
 dstmt : BOOLEAN  ID ';' {
 						int index_id=check_exist($2);
 						if(index_id!=-1)
@@ -60,13 +93,20 @@ dstmt : BOOLEAN  ID ';' {
 						strcpy(temp_symb->var_name,$2->name);
 						temp_symb->size=0;
 					  strcpy(temp_symb->data_type,"boolean");
-						temp_symb->store.f=(bool *)malloc(sizeof(bool));
-						*(temp_symb->store.f)=false;
 						symtbl[id_count++]=temp_symb;
 						free_ptr($2);
 						//printf("declaration %s",yylval->data_type);
+
+						$$=(ast *) malloc(sizeof(ast));
+						$$->node_type=BOOLEAN;
+						$$->entry = id_count-1;
+
+
+
+
 					}
 		| INTEGER  ID ';' {
+
 				int index_id=check_exist($2);
 				if(index_id!=-1)
 					printf("error : name %s already exists\n", $2->name);
@@ -74,12 +114,14 @@ dstmt : BOOLEAN  ID ';' {
 				strcpy(temp_symb->var_name,$2->name);
 				temp_symb->size=0;
 				strcpy(temp_symb->data_type,"integer");
-
-				temp_symb->store.i=(int *)malloc(sizeof(int));
-				*(temp_symb->store.i)=0;
 				symtbl[id_count++]=temp_symb;
 				free_ptr($2);
 				//	printf("declaration %s",yylval->data_type);
+
+
+				$$=(ast *) malloc(sizeof(ast));
+				$$->node_type= INTEGER;
+				$$->entry = id_count-1;
 		}
 		| INTEGER ID '[' expr ']' ';' {
 		//	printf("array of integer\n" );
@@ -93,11 +135,13 @@ dstmt : BOOLEAN  ID ';' {
 				strcpy(temp_symb->var_name,$2->name);
 				temp_symb->size=$4->int_value;
 				strcpy(temp_symb->data_type,"integer");
-
-				temp_symb->store.i=(int *)malloc($4->int_value*sizeof(int));
-				memset(temp_symb->store.i,0,$4->int_value);
 				symtbl[id_count++]=temp_symb;
 				free_ptr($2);
+
+				$$=(ast *) malloc(sizeof(ast));
+				$$->node_type= INTEGER;
+				$$->entry = id_count-1;
+				$$->ptr1 = $4;
 
 		}
 		| BOOLEAN ID '[' expr ']' ';'{
@@ -111,19 +155,21 @@ dstmt : BOOLEAN  ID ';' {
 			strcpy(temp_symb->var_name,$2->name);
 			temp_symb->size=$4->int_value;
 			strcpy(temp_symb->data_type,"boolean");
-
-			temp_symb->store.f=(bool *)malloc($4->int_value*sizeof(bool));
-			memset(temp_symb->store.f,false,$4->int_value);
 			symtbl[id_count++]=temp_symb;
 			free_ptr($2);
 
+			$$=(ast *) malloc(sizeof(ast));
+			$$->node_type= BOOLEAN;
+			$$->entry = id_count-1;
+			$$->ptr1 = $4;
 		}
 
 		;
 
 pgmbody : BEG stmtlist END {
-															printf("evaluating the ast\n");
-															evaluate_ast($2);
+														$$=$2;
+														//	printf("evaluating the ast\n");
+														//	evaluate_ast($2);
 		};
 stmtlist :  stmt stmtlist{
 													ast *temp = (ast *)malloc(sizeof(ast));
@@ -535,6 +581,7 @@ int check_dtype(ast *yylval,char *b)
 }
 void free_ptr(ast *yylval)
 {
+
 	if(yylval==NULL)
 	{
 		printf("cannot free NULL ptr\n");
@@ -548,167 +595,298 @@ yyerror()
 	printf("yyerror\n");
 	return;
 }
-void evaluate_ast(ast *root)
+
+
+
+
+
+
+
+
+
+int evaluate_ast(ast *root)
 {
+
 	if(root==NULL)
-		{printf("should not print its NULLLLLLLLLL\n");return;}
+		{
+
+			printf("should not print its NULLLLLLLLLL\n");
+			return -1;
+		}
 	if(root->node_type==SLIST)
 	{
 		printf("SLIST\n" );
-		evaluate_ast(root->ptr1); // stmnt
-		evaluate_ast(root->ptr2); // slist
+		fprintf(fp, "\n");
+		int p1= evaluate_ast(root->ptr1); // stmnt
+		int p2 = evaluate_ast(root->ptr2); // slist
+		return -1;
 	}
-	else if(root->node_type== EQ)
+	else if(root->node_type == EQ)
 	{
+		fprintf(fp, "\n");
 		printf("EQ\n" );
-		evaluate_ast(root->ptr2);
-		printf("id_ind : %d  name: %s rhs: %d  dt: %s\n ",root->ptr1->entry,root->ptr1->name,root->ptr2->int_value,root->ptr1->data_type );
+		printf("%d\n",root->ptr2->node_type );
+		int p2 = evaluate_ast(root->ptr2);
+		//printf("%d\n",p2);
 
 		if(symtbl[root->ptr1->entry]->size==0)
 		{
-			printf("in eq not array\n" );
+		//	printf("in eq not array\n" );
 
-			if(strcmp(root->ptr1->data_type,"integer")==0)
-			{
 
-					*(symtbl[root->ptr1->entry]->store.i)= root->ptr2->int_value;
+				int id_add = symtbl[root->ptr1->entry]->store;
+				int reg = get_reg();
+				fprintf(fp, "MOV R%d, %d\n",reg,id_add );
+				fprintf(fp, "MOV [R%d], R%d\n",reg,p2 );
+
+				free_reg();
+				free_reg();
+
+					//*(symtbl[root->ptr1->entry]->store.i)= root->ptr2->int_value;
 				//	print_symbols();
-			}
-			else
-				*(symtbl[root->ptr1->entry]->store.f)= root->ptr2->bool_value;
+
 		}else // array
 		{
 
-			evaluate_ast(root->ptr3);
-			if(strcmp(root->ptr1->data_type,"integer")==0)
-				*(symtbl[root->ptr1->entry]->store.i + root->ptr2->int_value )= root->ptr3->int_value;
-			else
-				*(symtbl[root->ptr1->entry]->store.f + root->ptr2->int_value )= root->ptr3->bool_value;
+				int p3=evaluate_ast(root->ptr3);
+
+				//int id_add = symtbl[root->ptr1->entry]->store + root->ptr2->int_value  ; wrong
+				int reg = get_reg();
+				fprintf(fp, "MOV R%d, %d\n",reg,symtbl[root->ptr1->entry]->store);
+				fprintf(fp, "ADD R%d, R%d\n",reg,p2 );
+				fprintf(fp, "MOV [R%d], R%d\n",reg,p3);
+
+				free_reg();
+				free_reg();
+				free_reg();
+
+
 		}
 		//print_symbols();
+
+		return -1;
 	}
 	else if(root->node_type== PLUS)
 	{
+		fprintf(fp, "\n");
 		printf("PLUS\n" );
-		evaluate_ast(root->ptr1);
-		evaluate_ast(root->ptr2);
-		root->int_value=root->ptr1->int_value + root->ptr2->int_value;
+		int p1=evaluate_ast(root->ptr1);
+		int p2=evaluate_ast(root->ptr2);
+
+
+
+		fprintf(fp, "ADD R%d, R%d\n",p1,p2 );
+		free_reg();
+		return p1;
+
+
+		//root->int_value=root->ptr1->int_value + root->ptr2->int_value;
 	}
 	else if(root->node_type== MINUS)
 	{
+		fprintf(fp, "\n");
 		printf("MINUS\n" );
-		evaluate_ast(root->ptr1);
-		evaluate_ast(root->ptr2);
-		root->int_value=root->ptr1->int_value - root->ptr2->int_value;
+		int p1 =evaluate_ast(root->ptr1);
+		int p2=evaluate_ast(root->ptr2);
+
+
+
+	//	root->int_value=root->ptr1->int_value - root->ptr2->int_value;
 	}
 	else if(root->node_type== MUL)
 	{
+		fprintf(fp, "\n");
 		printf("MUL\n" );
-		evaluate_ast(root->ptr1);
-		evaluate_ast(root->ptr2);
-		root->int_value=root->ptr1->int_value - root->ptr2->int_value;
+		int p1=evaluate_ast(root->ptr1);
+		int p2=evaluate_ast(root->ptr2);
+
+
+	//	root->int_value=root->ptr1->int_value - root->ptr2->int_value;
 	}
 	else if(root->node_type== DIV)
 	{
+		fprintf(fp, "\n");
 		printf("DIV\n");
-		evaluate_ast(root->ptr1);
-		evaluate_ast(root->ptr2);
-		root->int_value=root->ptr1->int_value / root->ptr2->int_value;
+		int p1=evaluate_ast(root->ptr1);
+		int p2=evaluate_ast(root->ptr2);
+
+
+
+	//	root->int_value=root->ptr1->int_value / root->ptr2->int_value;
 	}
 	else if(root->node_type== EQEQ)
 	{
+		fprintf(fp, "\n");
 		printf("EQEQ\n" );
-		evaluate_ast(root->ptr1);
-		evaluate_ast(root->ptr2);
-		if(strcmp(root->ptr1->data_type,"integer")==0)
-			root->bool_value=root->ptr1->int_value == root->ptr2->int_value;
-		else
-			root->bool_value=root->ptr1->bool_value == root->ptr2->bool_value;
+		int r1=evaluate_ast(root->ptr1);
+		int r2=evaluate_ast(root->ptr2);
+
+
+
+
+
+				fprintf(fp, "EQ R%d, R%d\n",r1,r2 );
+				free_reg();  // free r2
+				return r1;
+
+
+
 	}
 	else if(root->node_type== NEQ)
 	{
+		fprintf(fp, "\n");
 		printf("NEQ\n" );
-		evaluate_ast(root->ptr1);
-		evaluate_ast(root->ptr2);
-		if(strcmp(root->ptr1->data_type,"integer")==0)
-			root->bool_value=root->ptr1->int_value != root->ptr2->int_value;
-		else
-			root->bool_value=root->ptr1->bool_value != root->ptr2->bool_value;
+		int r1=evaluate_ast(root->ptr1);
+		int r2=evaluate_ast(root->ptr2);
+
+
+
+				fprintf(fp, "NE R%d, R%d\n",r1,r2 );
+				free_reg();  // free r2
+				return r1;
+
+
 	}
 	else if(root->node_type== ID)
 	{
+		fprintf(fp, "\n");
 		printf("ID\n" );
 		if(root->ptr1==NULL) // not array
 		{
 			printf("not array id_ind: %d\n",root->entry);
-			if(strcmp(root->data_type,"integer")==0)
-				root->int_value = *(symtbl[root->entry]->store.i);
-			else
-				root->bool_value = *(symtbl[root->entry]->store.f);
+
+			int r1 = get_reg();
+			int r2 = get_reg();
+			fprintf(fp, "MOV R%d, %d\n",r2,symtbl[root->entry]->store );
+			fprintf(fp, "MOV R%d, [R%d]\n",r1,r2 );
+			free_reg();
+			return r1;
 		}
 		else //array
 		{
-			printf("array id_ind: %d\n",root->entry );
-			evaluate_ast(root->ptr1);
-			if(strcmp(root->data_type,"integer")==0)
-				{
-					printf("yes int\n" );
-					root->int_value = *(symtbl[root->entry]->store.i + root->ptr1->int_value);
-				}
-			else
-				root->bool_value = *(symtbl[root->entry]->store.f + root->ptr1->int_value);
+		//	printf("array id_ind: %d\n",root->entry );
+
+			int r1 = get_reg();
+			int r2 = get_reg();
+			int p1 =evaluate_ast(root->ptr1);
+			fprintf(fp, "MOV R%d, %d\n",r2,symtbl[root->entry]->store);
+			fprintf(fp, "ADD R%d, R%d\n",r2,p1 );
+			fprintf(fp, "MOV R%d, [R%d]\n",r1,r2 );
+			free_reg();
+			free_reg();
+
+
+			return r1;
 		}
 
 	}
 	else if(root->node_type== IF)
 	{
+		fprintf(fp, "\n");
 		printf("IF\n");
-		evaluate_ast(root->ptr1);
-		printf("bool val: %d\n",root->ptr1->bool_value );
-		if(root->ptr1->bool_value)
-			evaluate_ast(root->ptr2);
-		else
-			{
-				if(root->ptr3!=NULL)  // else
-				evaluate_ast(root->ptr3);
-			}
+		int p1=evaluate_ast(root->ptr1);
+
+
+		int l1=get_label();
+		fprintf(fp, "IF%d:\n",l1);
+		fprintf(fp, "JZ R%d, ELSE%d\n",p1,l1 );
+		int p2=evaluate_ast(root->ptr2);
+		fprintf(fp, "JMP ENDIF%d\n",l1 );
+		fprintf(fp, "ELSE%d:\n",l1 );
+		int p3 = evaluate_ast(root->ptr3);
+
+		fprintf(fp, "ENDIF%d:\n",l1);
 	}
 	else if(root->node_type == WHILE)
 	{
+		fprintf(fp, "\n");
 		printf("WHILE\n" );
-		while(1)
-		{
-			evaluate_ast(root->ptr1);
-			if(root->ptr1->bool_value==false)
-				break;
-			evaluate_ast(root->ptr2);
-		}
+
+		int l1=get_label();
+		fprintf(fp, "LOOP%d:\n",l1);
+			int p1=evaluate_ast(root->ptr1);
+			fprintf(fp, "JZ R%d, ENDLOOP%d\n",p1,l1 );
+
+			int p3=evaluate_ast(root->ptr2);
+		fprintf(fp, "JMP LOOP%d\n",l1 );
+
+		fprintf(fp, "ENDLOOP%d:\n",l1);
+
+
 	}
 	else if(root->node_type == NUM || root->node_type == T || root->node_type == F)
 	{
+		fprintf(fp, "\n");
 		printf("NUM/T/F %d\n",root->int_value );
-			return;
+			int r=get_reg();
+			fprintf(fp, "MOV R%d,%d\n",r,root->int_value );
+			return r;
 	}
 	else if(root->node_type == READ)
 	{
+		fprintf(fp, "\n");
 		printf("READ\n" );
+		int r1 = get_reg();
+		fprintf(fp, "IN R%d\n",r1 );
+		int r2= get_reg();
+
 		if(symtbl[root->entry]->size==0)
 		{
-			scanf("%d\n",symtbl[root->entry]->store.i );
+			fprintf(fp, "MOV R%d, %d\n",r2,symtbl[root->entry]->store );
+			fprintf(fp, "MOV [R%d], R%d\n",r2,r1 );
+
+			free_reg();
+			free_reg();
+
+
 		}
 		else
 		{
-			evaluate_ast(root->ptr1);
-			scanf("%d\n",symtbl[root->entry]->store.i + root->ptr1->int_value );
+			int p1=evaluate_ast(root->ptr1);
+			fprintf(fp, "MOV R%d, %d\n",r2,symtbl[root->entry]->store );
+			fprintf(fp, "ADD R%d, R%d\n",r2,p1 );
+			fprintf(fp, "MOV [R%d], R%d\n",r2,r1 );
+
+			free_reg();
+			free_reg();
+			free_reg();
+
 		}
+
 		printf("read over\n" );
 	}
 	else if(root->node_type == WRITE)
 	{
+		fprintf(fp, "\n");
 		printf("WRITE\n");
-		evaluate_ast(root->ptr1);
-		printf("writing %d %d\n",root->ptr1->int_value ,root->ptr1->entry);
+		int p1=evaluate_ast(root->ptr1);
 
+		fprintf(fp, "OUT R%d\n",p1 );
+		free_reg();
+
+	}
+	else if(root->node_type == DLIST)
+	{
+		printf("..DLIST\n");
+		printf("%s\n",root->name );
+		printf("%d %d\n",root->ptr1->node_type, root->ptr1->entry );
+		printf("%d \n",root->ptr2->node_type );
+
+		int p1=evaluate_ast(root->ptr1);
+		int p2=evaluate_ast(root->ptr2);
+	}
+	else if(root->node_type == INTEGER ||  root->node_type == BOOLEAN)
+	{
+		printf("INTEGER\n");
+		if(symtbl[root->entry]->size==0)
+		{
+			symtbl[root->entry]->store=allocate_mem(1);
+		//	fprintf(fp,"%s\n", );
+
+		}
+		else{
+			symtbl[root->entry]->store=allocate_mem(symtbl[root->entry]->size);
+		}
 	}
 	else
 	{
@@ -717,28 +895,42 @@ void evaluate_ast(ast *root)
 
 }
 
+
+
+
+
+
+
+
+
+
 void print_symbols()
 {
 	int i;
-	printf("\n");
 	for(i=0;i<id_count;i++)
-	{
-		if(symtbl[i]->size == 0){
-		printf("%s   ", symtbl[i]->var_name);
-		printf("%d\n", *(symtbl[i]->store.i));
-	}
-	else{
-		printf("%s   ", symtbl[i]->var_name);
-		int j;
-		for(j=0;j<symtbl[i]->size;j++)
-			printf("%d ", *(symtbl[i]->store.i + j));
-		printf("\n");
-	}
-	}
+		printf("%s %d\n",symtbl[i]->var_name,symtbl[i]->store);
 }
-
+int get_reg()
+{
+	return reg_ctr++;
+}
+void free_reg()
+{
+	reg_ctr--;
+}
+int get_label()
+{
+	return label_ctr++;
+}
+int allocate_mem(int size)
+{
+	int r=var_mem;
+	var_mem = var_mem + size;
+	return r;
+}
 main()
 {
+	fp=fopen("op.sil","w+");
 	yyparse();
 	return 1;
 }

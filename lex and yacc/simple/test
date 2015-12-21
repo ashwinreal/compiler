@@ -1,5 +1,21 @@
 decl
 integer a;
+integer c[10];
+integer b;
+enddecl
+begin
+
+a=1;
+write a;
+b=2;
+write b;
+c[0]=b + a;
+write c[0];
+end
+
+
+decl
+integer a;
 integer b;
 integer c[10];
 enddecl
@@ -13,8 +29,11 @@ c[2]=2;
 else
 a=10;
 b=11;
+c[2]=12;
 endif
-a=c[1];
+write a;
+write b;
+write c[2];
 end
 
 
@@ -32,10 +51,11 @@ read b;
 read c[1];
 while (a!=b) do
 b=b+1;
+write b;
 endwhile
 write a;
 write b;
-write c[2];
+write c[1];
 end
 
 

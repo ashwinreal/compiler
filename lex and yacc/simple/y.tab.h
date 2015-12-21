@@ -72,7 +72,8 @@ extern int yydebug;
     DIV = 282,
     SLIST = 283,
     EQ = 284,
-    NEQ = 285
+    DLIST = 285,
+    NEQ = 286
   };
 #endif
 /* Tokens.  */
@@ -103,7 +104,8 @@ extern int yydebug;
 #define DIV 282
 #define SLIST 283
 #define EQ 284
-#define NEQ 285
+#define DLIST 285
+#define NEQ 286
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
